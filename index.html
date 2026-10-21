@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Venelin Stanchev</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=League+Gothic&family=Patrick+Hand&family=Work+Sans:wght@400;500&display=swap">
+<style>
+/* Layout: a page torn out of a game-dev sketchbook. Graph paper, pencil doodles that wobble like
+   hand-drawn animation, three taped-down project shots (the middle one picked up off the page). */
+:root {
+  --paper: #f7f7f3;
+  --grid: #cfdcea;
+  --grid-strong: #b3c7dc;
+  --ink: #151515;
+  --pencil: #5e6f86;
+  --marker: #e2352b;
+  --tape: rgba(236, 226, 180, 0.78);
+  --display: "League Gothic", "Oswald", "Arial Narrow", Impact, sans-serif;
+  --hand: "Patrick Hand", "Comic Neue", "Segoe Print", "Bradley Hand", cursive;
+  --body: "Work Sans", "Helvetica Neue", Arial, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--body);
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-strong) 1px, transparent 1px),
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+  background-position: -1px -1px;
+  overflow-x: hidden;
+}
+/* red margin line like a real notebook */
+body::after { content: ""; position: fixed; top: 0; bottom: 0; left: clamp(28px, 6vw, 84px); width: 2px; background: rgba(226, 53, 43, 0.35); z-index: 0; pointer-events: none; }
+
+.doodles { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.doodles path, .doodles circle, .doodles rect, .doodles polyline { fill: none; stroke: var(--pencil); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.doodles text { font-family: var(--hand); fill: var(--pencil); font-size: 22px; }
+.draw { stroke-dasharray: var(--len, 600); stroke-dashoffset: var(--len, 600); animation: draw 1.6s ease forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+.page {
+  position: relative; z-index: 1; min-height: 100%;
+  display: grid; grid-template-rows: auto 1fr auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px), calc(clamp(28px, 6vw, 84px) + 18px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: clamp(18px, 3vw, 34px);
+  max-width: 1400px; margin: 0 auto;
+}
+
+header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.name { margin: 0; font-family: var(--display); font-weight: 400; text-transform: uppercase; font-size: clamp(46px, 7vw, 92px); line-height: 0.86; letter-spacing: 0.01em; }
+.note { font-family: var(--hand); color: var(--marker); font-size: 22px; margin: 6px 0 0; transform: rotate(-1.5deg); transform-origin: left; }
+.note u { text-decoration: none; background: linear-gradient(transparent 62%, rgba(255, 221, 64, 0.7) 62%); padding: 0 2px; color: var(--ink); }
+
+.socials { display: flex; align-items: center; gap: 12px; }
+.socials .find { font-family: var(--hand); font-size: 20px; color: var(--pencil); margin-right: 2px; transform: rotate(-4deg); }
+.socials a {
+  position: relative; width: 46px; height: 46px; display: grid; place-items: center; color: var(--ink);
+  background: var(--paper); text-decoration: none; transition: transform 0.15s;
+}
+.socials a:nth-child(2) { transform: rotate(-3deg); }
+.socials a:nth-child(3) { transform: rotate(2deg); }
+.socials a:nth-child(4) { transform: rotate(-1deg); }
+.socials a svg.ico { width: 21px; height: 21px; fill: currentColor; position: relative; }
+.socials a:hover, .socials a:focus-visible { transform: rotate(0) translateY(-3px) scale(1.06); color: var(--marker); outline: none; }
+
+/* hand-drawn box outline, wobbling via the boil filter */
+.sketch-box { position: absolute; inset: -3px; width: calc(100% + 6px); height: calc(100% + 6px); overflow: visible; pointer-events: none; }
+.sketch-box rect { fill: none; stroke: var(--ink); stroke-width: 2.2; vector-effect: non-scaling-stroke; }
+
+.stage { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: clamp(4px, 2vw, 22px); padding-block: clamp(20px, 4vh, 48px); min-width: 0; }
+.arrow { position: relative; z-index: 5; background: none; border: 0; cursor: pointer; color: var(--ink); padding: 8px; transition: transform 0.15s; }
+.arrow svg { width: clamp(44px, 5vw, 64px); height: clamp(60px, 7vw, 88px); overflow: visible; }
+.arrow path { fill: none; stroke: currentColor; stroke-width: 11; stroke-linecap: round; stroke-linejoin: round; }
+.arrow:hover, .arrow:focus-visible { color: var(--marker); transform: scale(1.08); outline: none; }
+.arrow:active { transform: scale(0.94); }
+
+.rail { position: relative; height: clamp(380px, 50vw, 560px); perspective: 1200px; min-width: 0; }
+.slot {
+  position: absolute; left: 50%; top: 45%; width: clamp(210px, 29vw, 390px);
+  transition: transform 0.6s cubic-bezier(.3,1.25,.5,1), filter 0.4s;
+  transform-style: preserve-3d; cursor: pointer;
+}
+.slot[data-pos="0"]  { transform: translate(-50%, -50%) rotate(-1deg); z-index: 3; cursor: default; }
+.slot[data-pos="-1"] { transform: translate(calc(-50% - 96%), -46%) scale(0.76) rotate(-4deg); z-index: 2; }
+.slot[data-pos="1"]  { transform: translate(calc(-50% + 96%), -46%) scale(0.76) rotate(3deg); z-index: 2; }
+.slot[data-pos="-1"]:hover { transform: translate(calc(-50% - 94%), -48%) scale(0.78) rotate(-2deg); }
+.slot[data-pos="1"]:hover  { transform: translate(calc(-50% + 94%), -48%) scale(0.78) rotate(1deg); }
+
+.card {
+  position: relative; aspect-ratio: 1 / 1; max-width: 100%; background: #fff; padding: 10px;
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateZ(0);
+  transition: transform 0.2s ease-out, box-shadow 0.3s;
+  box-shadow: 2px 3px 0 rgba(0,0,0,0.08);
+}
+.slot[data-pos="0"] .card { box-shadow: 10px 16px 0 rgba(21, 21, 21, 0.12), 0 22px 40px -18px rgba(0,0,0,0.35); }
+.photo { position: relative; width: 100%; height: 100%; overflow: hidden; background: #e9ece6; }
+.photo img, .photo video { width: 100%; height: 100%; object-fit: cover; display: block; transform: scale(1.04); transition: transform 0.3s; }
+.slot[data-pos="0"]:hover .photo img, .slot[data-pos="0"]:hover .photo video { transform: scale(1.08) translate(calc(var(--ry, 0deg) * -0.35px), calc(var(--rx, 0deg) * 0.35px)); }
+.shine { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.2s; background: radial-gradient(55% 55% at var(--gx, 50%) var(--gy, 50%), rgba(255,255,255,0.35), transparent 65%); }
+.slot[data-pos="0"]:hover .shine { opacity: 1; }
+.tape { position: absolute; width: 92px; height: 26px; background: var(--tape); top: -12px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); z-index: 2; }
+.tape.l { left: -18px; transform: rotate(-32deg); }
+.tape.r { right: -18px; transform: rotate(28deg); }
+.slot[data-pos="0"] .tape.l { transform: rotate(-32deg) translateY(-4px); }
+
+/* placeholder for unfinished projects: a pencil sketch, not a stock gradient */
+.todo { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 18px; background:
+  repeating-linear-gradient(-45deg, transparent 0 11px, rgba(94, 111, 134, 0.16) 11px 12px), #fbfbf8; }
+.todo b { display: block; font-family: var(--display); font-weight: 400; font-size: clamp(70px, 10vw, 130px); line-height: 0.8; color: var(--pencil); }
+.todo span { font-family: var(--hand); font-size: 20px; color: var(--pencil); }
+
+.label { text-align: center; margin-top: 16px; }
+.label h2 { margin: 0; font-family: var(--display); font-weight: 400; text-transform: uppercase; letter-spacing: 0.02em; font-size: clamp(24px, 2.6vw, 34px); line-height: 1; }
+.slot[data-pos="0"] .label h2 { font-size: clamp(34px, 4vw, 52px); }
+.label p { margin: 6px auto 0; max-width: 32ch; font-size: 14px; line-height: 1.5; color: #3d4450; opacity: 0; transition: opacity 0.3s; }
+.slot[data-pos="0"] .label p { opacity: 1; transition-delay: 0.25s; }
+.play {
+  display: inline-block; margin-top: 12px; font-family: var(--hand); font-size: 22px; color: var(--marker); text-decoration: none;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s, transform 0.15s; position: relative; padding: 2px 6px;
+}
+.play::after { content: ""; position: absolute; left: 2px; right: 2px; bottom: 0; height: 3px; background: var(--marker); border-radius: 2px; transform: rotate(-1deg); }
+.slot[data-pos="0"] .play { opacity: 1; pointer-events: auto; transition-delay: 0.3s; }
+.play:hover, .play:focus-visible { transform: rotate(-2deg) scale(1.05); outline: none; }
+.play[aria-disabled="true"] { color: var(--pencil); }
+.play[aria-disabled="true"]::after { background: var(--pencil); }
+
+footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-family: var(--hand); font-size: 19px; color: var(--pencil); }
+.dots { display: flex; gap: 10px; }
+.dots button { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--ink); background: transparent; cursor: pointer; padding: 0; }
+.dots button[aria-current="true"] { background: var(--ink); }
+.dots button:focus-visible { outline: 2px dashed var(--marker); outline-offset: 3px; }
+
+@media (max-width: 720px) {
+  .stage { grid-template-columns: 1fr; }
+  .arrow { display: none; }
+  .rail { height: 540px; }
+  .slot { width: min(66vw, 300px); top: 42%; }
+  body::after { left: 12px; }
+  .page { padding-left: max(26px, env(safe-area-inset-left, 0px)); }
+  .slot[data-pos="-1"] { transform: translate(calc(-50% - 88%), -46%) scale(0.7) rotate(-5deg); }
+  .slot[data-pos="1"]  { transform: translate(calc(-50% + 88%), -46%) scale(0.7) rotate(4deg); }
+  .slot[data-pos="-1"] .label, .slot[data-pos="1"] .label { opacity: 0; }
+  .keys { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- "line boil": the seed changes a few times a second so pencil lines shiver like hand-drawn animation -->
+    <filter id="boil" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence id="boilNoise" type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="1" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="3.2" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<svg class="doodles" id="doodles" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" filter="url(#boil)">
+  <!-- crosshair -->
+  <g transform="translate(1010 800)"><circle class="draw" r="30" style="--len:200"/><path class="draw" d="M-46 0h30M16 0h30M0 -46v30M0 16v30" style="--len:140"/></g>
+  <!-- d-pad -->
+  <path class="draw" d="M150 690h30v-30h28v30h30v28h-30v30h-28v-30h-30z" style="--len:400" transform="translate(-30 0)"/>
+  <!-- low-poly cube -->
+  <path class="draw" d="M1180 700l60-30 60 30-60 30zM1180 700v70l60 30 60-30v-70M1240 730v70" style="--len:600"/>
+  <!-- squiggle + arrow note -->
+  <path class="draw" d="M300 160c30-30 50 30 80 0s50 30 80 0 50 30 80 0" style="--len:400"/>
+  <!-- little stick figure with a gun, because of course -->
+  <g transform="translate(1320 430)"><circle class="draw" cx="0" cy="-40" r="11" style="--len:80"/><path class="draw" d="M0 -29v34M0 5l-12 26M0 5l12 26M0 -18l26 2h22M26 -16v8" style="--len:220"/></g>
+  <!-- health bar -->
+  <g transform="translate(110 420)"><rect class="draw" width="120" height="16" rx="3" style="--len:280"/><path class="draw" d="M6 8h70" style="--len:80; stroke: var(--marker); stroke-width:7"/></g>
+  <!-- star -->
+  <path class="draw" d="M700 820l10 22 24 3-18 16 5 24-21-12-21 12 5-24-18-16 24-3z" style="--len:260"/>
+  <!-- loose notes -->
+  <text x="1120" y="250" transform="rotate(-6 1120 250)">lvl 1 → ???</text>
+  <text x="250" y="560" transform="rotate(4 250 560)">todo: sleep</text>
+  <text x="900" y="110" transform="rotate(-3 900 110)">+100</text>
+</svg>
+
+<div class="page">
+  <header>
+    <div>
+      <h1 class="name">Venelin Stanchev</h1>
+    </div>
+    <nav class="socials" aria-label="Social links">
+      <span class="find" aria-hidden="true">find me →</span>
+      <a id="s-github" href="#" target="_blank" rel="noopener" aria-label="GitHub" title="GitHub">
+        <svg class="sketch-box" preserveAspectRatio="none" viewBox="0 0 46 46" filter="url(#boil)"><rect x="2" y="2" width="42" height="42" rx="4"/></svg>
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3"/></svg>
+      </a>
+      <a id="s-linkedin" href="#" target="_blank" rel="noopener" aria-label="LinkedIn" title="LinkedIn">
+        <svg class="sketch-box" preserveAspectRatio="none" viewBox="0 0 46 46" filter="url(#boil)"><rect x="2" y="2" width="42" height="42" rx="4"/></svg>
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zm1.78 13.02H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
+      </a>
+      <a id="s-tiktok" href="#" target="_blank" rel="noopener" aria-label="TikTok" title="TikTok">
+        <svg class="sketch-box" preserveAspectRatio="none" viewBox="0 0 46 46" filter="url(#boil)"><rect x="2" y="2" width="42" height="42" rx="4"/></svg>
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.53.02c1.3-.02 2.6-.01 3.9-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03a10.7 10.7 0 0 1-5.82-1.9c-.01 2.92.01 5.84-.02 8.75a7.6 7.6 0 0 1-1.35 3.94 7.47 7.47 0 0 1-5.91 3.21 7.3 7.3 0 0 1-4.08-1.03 7.55 7.55 0 0 1-3.65-5.71c-.02-.5-.03-1-.01-1.49a7.5 7.5 0 0 1 8.73-6.68c.02 1.48-.04 2.96-.04 4.44a3.4 3.4 0 0 0-4.38 2.12c-.21.51-.15 1.07-.14 1.61a3.4 3.4 0 0 0 6.27 1.26c.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+      </a>
+    </nav>
+  </header>
+
+  <main class="stage">
+    <button class="arrow" id="prev" aria-label="Previous game"><svg viewBox="0 0 60 90" filter="url(#boil)" aria-hidden="true"><path d="M48 10L12 46l36 34"/></svg></button>
+    <div class="rail" id="rail" aria-roledescription="carousel" aria-label="Games"></div>
+    <button class="arrow" id="next" aria-label="Next game"><svg viewBox="0 0 60 90" filter="url(#boil)" aria-hidden="true"><path d="M12 10l36 36-36 34"/></svg></button>
+  </main>
+
+  <footer>
+    <div class="dots" id="dots" role="tablist" aria-label="Choose a game"></div>
+    <span class="keys">psst, arrow keys work too</span>
+  </footer>
+</div>
+
+<script>
+// ---- edit these ----
+const SOCIALS = {
+  github: "https://github.com/VenelinStanchev",
+  linkedin: "https://www.linkedin.com/in/venelin-stanchev-9864a6398/",
+  tiktok: "https://www.tiktok.com/@votrium"
+};
+const GAMES = [
+  // video: an .mp4 next to this file plays muted on a loop; image is used when there is no video
+  { label: "Unreal Game", engine: "Unreal", blurb: "In development. Gameplay footage from the current build.", video: "", image: "", link: "", mark: "UE" },
+  { label: "Roblox Game", engine: "Roblox", blurb: "Hood Warfare: team shooter with five maps, six modes, killstreaks and way too many weapon skins.",
+    image: "roblox_game.jpg", link: "https://www.roblox.com/games/124131995326052" },
+  { label: "Unity Game", engine: "Unity", blurb: "In development. Gameplay footage from the current build.", video: "", image: "", link: "", mark: "U" }
+];
+// --------------------
+
+for (const k of Object.keys(SOCIALS)) {
+  const a = document.getElementById("s-" + k);
+  if (SOCIALS[k]) a.href = SOCIALS[k]; else a.removeAttribute("target");
+}
+
+const rail = document.getElementById("rail");
+const dots = document.getElementById("dots");
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let current = 1;
+
+const slots = GAMES.map((g, i) => {
+  const s = document.createElement("article");
+  s.className = "slot";
+  const media = g.video
+    ? `<video src="${g.video}" muted autoplay loop playsinline preload="metadata" aria-label="${g.label} gameplay video"></video>`
+    : g.image
+    ? `<img src="${g.image}" alt="${g.label} screenshot" draggable="false">`
+    : `<div class="todo"><div><b>${g.mark}</b><span>gameplay video soon</span></div></div>`;
+  const cta = g.link
+    ? `<a class="play" href="${g.link}" target="_blank" rel="noopener">go play it →</a>`
+    : `<span class="play" aria-disabled="true">in development</span>`;
+  s.innerHTML = `<div class="card"><span class="tape l"></span><span class="tape r"></span>
+      <div class="photo">${media}<div class="shine"></div></div>
+      <svg class="sketch-box" preserveAspectRatio="none" viewBox="0 0 100 100" filter="url(#boil)"><rect x="1" y="1" width="98" height="98"/></svg>
+    </div>
+    <div class="label"><h2>${g.label}</h2><p>${g.blurb}</p>${cta}</div>`;
+  s.addEventListener("click", () => { const p = +s.dataset.pos; if (p !== 0) go(current + p); });
+  rail.appendChild(s);
+  const d = document.createElement("button");
+  d.setAttribute("role", "tab");
+  d.setAttribute("aria-label", g.label);
+  d.addEventListener("click", () => go(i));
+  dots.appendChild(d);
+  return s;
+});
+
+function go(i) {
+  const n = GAMES.length;
+  current = ((i % n) + n) % n;
+  slots.forEach((s, k) => {
+    let p = k - current;
+    if (p > n / 2) p -= n;
+    if (p < -n / 2) p += n;
+    s.dataset.pos = p;
+    s.setAttribute("aria-hidden", p !== 0 ? "true" : "false");
+    const c = s.querySelector(".card");
+    c.style.removeProperty("--rx"); c.style.removeProperty("--ry");
+  });
+  [...dots.children].forEach((d, k) => d.setAttribute("aria-current", k === current ? "true" : "false"));
+}
+go(current);
+
+document.getElementById("prev").addEventListener("click", () => go(current - 1));
+document.getElementById("next").addEventListener("click", () => go(current + 1));
+addEventListener("keydown", e => {
+  if (e.key === "ArrowLeft") go(current - 1);
+  if (e.key === "ArrowRight") go(current + 1);
+});
+let sx = null;
+rail.addEventListener("touchstart", e => { sx = e.touches[0].clientX; }, { passive: true });
+rail.addEventListener("touchend", e => {
+  if (sx === null) return;
+  const dx = e.changedTouches[0].clientX - sx;
+  if (Math.abs(dx) > 40) go(current + (dx < 0 ? 1 : -1));
+  sx = null;
+});
+
+if (!reduce) {
+  // picked-up photo tilts toward the pointer
+  rail.addEventListener("pointermove", e => {
+    const card = slots[current].querySelector(".card");
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+    const inside = x > -0.1 && x < 1.1 && y > -0.1 && y < 1.1;
+    card.style.setProperty("--ry", inside ? ((x - 0.5) * 20).toFixed(2) + "deg" : "0deg");
+    card.style.setProperty("--rx", inside ? ((0.5 - y) * 20).toFixed(2) + "deg" : "0deg");
+    card.style.setProperty("--gx", (x * 100).toFixed(1) + "%");
+    card.style.setProperty("--gy", (y * 100).toFixed(1) + "%");
+  });
+  rail.addEventListener("pointerleave", () => {
+    const card = slots[current].querySelector(".card");
+    card.style.setProperty("--rx", "0deg"); card.style.setProperty("--ry", "0deg");
+  });
+
+  // line boil at ~8 fps, like a hand-drawn cartoon on twos and threes
+  const noise = document.getElementById("boilNoise");
+  let seed = 1;
+  setInterval(() => { seed = (seed % 4) + 1; noise.setAttribute("seed", seed); }, 125);
+
+  // doodles drift a little with the mouse, as if the page was moving on the desk
+  const doodles = document.getElementById("doodles");
+  addEventListener("pointermove", e => {
+    const dx = (e.clientX / innerWidth - 0.5) * -10, dy = (e.clientY / innerHeight - 0.5) * -8;
+    doodles.style.transform = `translate(${dx}px, ${dy}px)`;
+  });
+}
+</script>
+</body>
+</html>
