@@ -114,7 +114,7 @@ header { display: flex; justify-content: space-between; align-items: flex-start;
 .shine { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.2s; background: radial-gradient(55% 55% at var(--gx, 50%) var(--gy, 50%), rgba(255,255,255,0.35), transparent 65%); }
 .slot[data-pos="0"]:hover .shine { opacity: 1; }
 /* hover/tap preview clip sits over the screenshot and fades in while playing */
-.photo video.preview { position: absolute; inset: 0; opacity: 0; transition: opacity 0.25s, transform 0.3s; }
+.photo video.preview { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.3s; }
 .photo.previewing video.preview { opacity: 1; }
 .tape { position: absolute; width: 92px; height: 26px; background: var(--tape); top: -12px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); z-index: 2; }
 .tape.l { left: -18px; transform: rotate(-32deg); }
@@ -268,7 +268,7 @@ const slots = GAMES.map((g, i) => {
     ? `<video src="${g.video}" muted autoplay loop playsinline preload="metadata" aria-label="${g.label} gameplay video"></video>`
     : g.image
     ? `<img src="${g.image}" alt="${g.label} screenshot" draggable="false">` +
-      (g.preview ? `<video class="preview" src="${g.preview}" muted loop playsinline preload="auto" aria-hidden="true"></video>` : "")
+      (g.preview ? `<video class="preview" src="${g.preview}" muted loop playsinline preload="auto" disablepictureinpicture disableremoteplayback aria-hidden="true"></video>` : "")
     : `<div class="todo"><div><b>${g.mark}</b><span>gameplay video soon</span></div></div>`;
   const cta = g.link
     ? `<a class="play" href="${g.link}" target="_blank" rel="noopener">go play it →</a>`
@@ -281,11 +281,9 @@ const slots = GAMES.map((g, i) => {
   s.addEventListener("click", () => { const p = +s.dataset.pos; if (p !== 0) go(current + p); });
   if (g.preview) {
     const photo = s.querySelector(".photo");
-    photo.addEventListener("pointerenter", e => { if (e.pointerType !== "touch" && s.dataset.pos === "0") preview(s, true); });
-    photo.addEventListener("pointerleave", e => { if (e.pointerType !== "touch") preview(s, false); });
     // touch has no hover, so a tap on the centre photo toggles the clip
     photo.addEventListener("click", () => {
-      if (lastPointer === "touch" && s.dataset.pos === "0") preview(s, !photo.classList.contains("previewing"));
+      if (lastPointer === "touch" && s.dataset.pos === "0") preview(s, !photo.dataset.want);
     });
   }
   rail.appendChild(s);
@@ -301,7 +299,9 @@ function preview(s, on) {
   const v = s.querySelector("video.preview");
   if (!v) return;
   const photo = s.querySelector(".photo");
+  if (!!photo.dataset.want === on) return;
   photo.dataset.want = on ? "1" : "";
+  v.muted = true;
   // only cover the screenshot once frames are actually playing
   if (on) v.play().then(() => photo.classList.toggle("previewing", !!photo.dataset.want)).catch(() => {});
   else { photo.classList.remove("previewing"); v.pause(); }
@@ -317,13 +317,21 @@ function go(i) {
     s.dataset.pos = p;
     s.setAttribute("aria-hidden", p !== 0 ? "true" : "false");
     if (p !== 0) preview(s, false);
-    else if (lastPointer !== "touch" && s.querySelector(".photo").matches(":hover")) preview(s, true);
     const c = s.querySelector(".card");
     c.style.removeProperty("--rx"); c.style.removeProperty("--ry");
   });
   [...dots.children].forEach((d, k) => d.setAttribute("aria-current", k === current ? "true" : "false"));
 }
 go(current);
+
+// hover preview: hit-test the photo's box ourselves, because pointerenter/leave on the
+// tilting 3D card fires erratically in Safari and made the clip flicker on and off
+rail.addEventListener("pointermove", e => {
+  if (e.pointerType === "touch") return;
+  const r = slots[current].querySelector(".photo").getBoundingClientRect();
+  preview(slots[current], e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom);
+});
+rail.addEventListener("pointerleave", e => { if (e.pointerType !== "touch") preview(slots[current], false); });
 
 document.getElementById("prev").addEventListener("click", () => go(current - 1));
 document.getElementById("next").addEventListener("click", () => go(current + 1));
